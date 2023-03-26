@@ -1,8 +1,10 @@
 package models
 
-type BlockChain struct {
-	Blocks []*Block
-}
+import (
+	"bytes"
+	"encoding/gob"
+	"log"
+)
 
 type Block struct {
 	Hash     []byte
@@ -21,16 +23,33 @@ func CreateBlock(data string, prevHash []byte) *Block {
 	return block
 }
 
-func (c *BlockChain) AddBlock(data string) {
-	prevBlock := c.Blocks[len(c.Blocks)-1]
-	c.Blocks = append(c.Blocks, CreateBlock(data, prevBlock.Hash))
-}
-
 func Cody() *Block {
 	return CreateBlock("Cody", []byte{})
 }
 
-// InitBlockChain create a brand-new blockchain
-func InitBlockChain() *BlockChain {
-	return &BlockChain{[]*Block{Cody()}}
+// Serialize converts block data structure to byte, used for badgerDB
+func (block *Block) Serialize() []byte {
+	var res bytes.Buffer
+	encoder := gob.NewEncoder(&res)
+
+	err := encoder.Encode(block)
+	Handle(err)
+
+	return res.Bytes()
+}
+
+// Deserialize converts from bytes into block structure
+func Deserialize(data []byte) *Block {
+	var block Block
+	decoder := gob.NewDecoder(bytes.NewReader(data))
+
+	err := decoder.Decode(&block)
+	Handle(err)
+	return &block
+}
+
+func Handle(err error) {
+	if err != nil {
+		log.Panic(err)
+	}
 }

@@ -4,6 +4,9 @@ GO_BUILD_FLAGS = -ldflags "-s -w"
 winos:
 	go env -w GOOS=windows
 
+macos:
+	go env -w GOOS=darwin
+
 run: winos
 	go run cmd/main.go
 

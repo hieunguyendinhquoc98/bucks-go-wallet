@@ -1,26 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"github.com/bucks-go-wallet/models"
-	"strconv"
+	cli2 "github.com/bucks-go-wallet/models/cli"
+	"github.com/dgraph-io/badger"
+	"os"
 )
 
 func main() {
 
+	defer os.Exit(0)
 	chain := models.InitBlockChain()
+	defer func(Database *badger.DB) {
+		err := Database.Close()
+		if err != nil {
 
-	chain.AddBlock("First Block after Cody")
-	chain.AddBlock("Second Block after Cody")
-	chain.AddBlock("Third Block after Cody")
+		}
+	}(chain.Database)
 
-	for _, block := range chain.Blocks {
-		fmt.Printf("Previour Hash: %x\n", block.PrevHash)
-		fmt.Printf("Data in Block: %s\n", block.Data)
-		fmt.Printf("Hash: %x\n", block.Hash)
-
-		pow := models.NewProof(block)
-		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
-		fmt.Println()
-	}
+	cli := cli2.CommandLine{BlockChain: chain}
+	cli.Run()
 }
