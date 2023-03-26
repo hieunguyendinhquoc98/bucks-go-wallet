@@ -2,20 +2,21 @@ package models
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
 	"log"
 )
 
 type Block struct {
-	Hash     []byte
-	Data     []byte
-	PrevHash []byte //represents last block hash, allow to link block together
-	Nonce    int
+	Hash         []byte
+	Transactions []*Transaction
+	PrevHash     []byte //represents last block hash, allow to link block together
+	Nonce        int
 }
 
 // CreateBlock creates new block
-func CreateBlock(data string, prevHash []byte) *Block {
-	block := &Block{[]byte{}, []byte(data), prevHash, 0}
+func CreateBlock(txs []*Transaction, prevHash []byte) *Block {
+	block := &Block{[]byte{}, txs, prevHash, 0}
 	pow := NewProof(block)
 	nonce, hash := pow.Run()
 	block.Nonce = nonce
@@ -23,8 +24,8 @@ func CreateBlock(data string, prevHash []byte) *Block {
 	return block
 }
 
-func Cody() *Block {
-	return CreateBlock("Cody", []byte{})
+func Cody(coinbase *Transaction) *Block {
+	return CreateBlock([]*Transaction{coinbase}, []byte{})
 }
 
 // Serialize converts block data structure to byte, used for badgerDB
@@ -42,10 +43,22 @@ func (block *Block) Serialize() []byte {
 func Deserialize(data []byte) *Block {
 	var block Block
 	decoder := gob.NewDecoder(bytes.NewReader(data))
-
 	err := decoder.Decode(&block)
 	Handle(err)
 	return &block
+}
+
+// HashTransactions allows to hashing mechanism to provide a unique representation of transactions combined
+func (block *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range block.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
 }
 
 func Handle(err error) {
