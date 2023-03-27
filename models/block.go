@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
-	"log"
+	"github.com/bucks-go-wallet/utils"
 )
 
 type Block struct {
@@ -34,7 +34,7 @@ func (block *Block) Serialize() []byte {
 	encoder := gob.NewEncoder(&res)
 
 	err := encoder.Encode(block)
-	Handle(err)
+	utils.Handle(err)
 
 	return res.Bytes()
 }
@@ -44,7 +44,7 @@ func Deserialize(data []byte) *Block {
 	var block Block
 	decoder := gob.NewDecoder(bytes.NewReader(data))
 	err := decoder.Decode(&block)
-	Handle(err)
+	utils.Handle(err)
 	return &block
 }
 
@@ -59,10 +59,4 @@ func (block *Block) HashTransactions() []byte {
 	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
 
 	return txHash[:]
-}
-
-func Handle(err error) {
-	if err != nil {
-		log.Panic(err)
-	}
 }

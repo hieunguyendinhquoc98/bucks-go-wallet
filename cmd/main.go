@@ -1,7 +1,7 @@
 package main
 
 import (
-	cli2 "github.com/bucks-go-wallet/models/cli"
+	cli2 "github.com/bucks-go-wallet/cli"
 	"os"
 )
 

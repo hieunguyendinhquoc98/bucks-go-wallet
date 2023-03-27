@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
+	"github.com/bucks-go-wallet/utils"
 	"log"
 )
 
@@ -47,7 +48,7 @@ func (tx *Transaction) SetID() {
 
 	encode := gob.NewEncoder(&encoded)
 	err := encode.Encode(tx)
-	Handle(err)
+	utils.Handle(err)
 
 	hash = sha256.Sum256(encoded.Bytes())
 	tx.ID = hash[:]
@@ -78,7 +79,7 @@ func NewTransaction(from, to string, amount int, chain *BlockChain) *Transaction
 
 	for txid, outs := range validOutputs {
 		txID, err := hex.DecodeString(txid)
-		Handle(err)
+		utils.Handle(err)
 
 		for _, out := range outs {
 			inputs = append(inputs, TxInput{txID, out, from})

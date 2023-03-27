@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/bucks-go-wallet/utils"
 	"github.com/dgraph-io/badger"
 	"os"
 	"runtime"
@@ -35,19 +36,19 @@ func InitBlockChain(address string) *BlockChain {
 
 	opts := badger.DefaultOptions(dbPath)
 	db, err := badger.Open(opts)
-	Handle(err)
+	utils.Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
 		cbtx := CoinbaseTx(address, codyData)
 		cody := Cody(cbtx)
 		fmt.Println("Cody created")
 		err = txn.Set(cody.Hash, cody.Serialize())
-		Handle(err)
+		utils.Handle(err)
 		err = txn.Set([]byte("lh"), cody.Hash)
 		lastHash = cody.Hash
 		return err
 	})
-	Handle(err)
+	utils.Handle(err)
 	return &BlockChain{lastHash, db}
 }
 
@@ -60,15 +61,15 @@ func ContinueBlockChain(address string) *BlockChain {
 	var lastHash []byte
 	opts := badger.DefaultOptions(dbPath)
 	db, err := badger.Open(opts)
-	Handle(err)
+	utils.Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
-		Handle(err)
+		utils.Handle(err)
 		lastHash, _ = item.ValueCopy(nil)
 		return err
 	})
-	Handle(err)
+	utils.Handle(err)
 
 	return &BlockChain{lastHash, db}
 }
@@ -78,21 +79,21 @@ func (chain *BlockChain) AddBlock(transactions []*Transaction) {
 
 	err := chain.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
-		Handle(err)
+		utils.Handle(err)
 		lastHash, err = item.ValueCopy(nil)
 		return err
 	})
-	Handle(err)
+	utils.Handle(err)
 	newBlock := CreateBlock(transactions, lastHash)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
 		err = txn.Set(newBlock.Hash, newBlock.Serialize())
-		Handle(err)
+		utils.Handle(err)
 		err = txn.Set([]byte("lh"), newBlock.Hash)
 		chain.LastHash = newBlock.Hash
 		return err
 	})
-	Handle(err)
+	utils.Handle(err)
 }
 
 func (chain *BlockChain) Iterator() *BlockChainIterator {
@@ -104,7 +105,7 @@ func (i *BlockChainIterator) Next() *Block {
 	var encodedBlock []byte
 	err := i.Database.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(i.CurrentHash)
-		Handle(err)
+		utils.Handle(err)
 
 		encodedBlock, err = item.ValueCopy(nil)
 		if err != nil {
@@ -113,7 +114,7 @@ func (i *BlockChainIterator) Next() *Block {
 		block = Deserialize(encodedBlock)
 		return nil
 	})
-	Handle(err)
+	utils.Handle(err)
 
 	i.CurrentHash = block.PrevHash
 	return block

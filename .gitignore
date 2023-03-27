@@ -36,4 +36,4 @@ bin/
 
 build/
 
-tmp/blocks/*
+tmp/

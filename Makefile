@@ -1,4 +1,4 @@
-GO_VERSION = 1.20
+GO_VERSION = 1.18
 GO_BUILD_FLAGS = -ldflags "-s -w"
 
 winos:
