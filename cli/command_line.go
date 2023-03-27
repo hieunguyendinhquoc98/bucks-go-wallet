@@ -6,6 +6,7 @@ import (
 	"github.com/bucks-go-wallet/models"
 	"github.com/bucks-go-wallet/utils"
 	"github.com/dgraph-io/badger"
+	"log"
 	"os"
 	"runtime"
 	"strconv"
@@ -22,7 +23,7 @@ func (cli *CommandLine) PrintUsage() {
 	fmt.Println(" printchain - Prints the blocks in the chain")
 	fmt.Println(" send -from FROM -to TO -amount AMOUNT - Send amount of coins")
 	fmt.Println(" createwallet - Create a new wallet")
-	fmt.Println(" listaddressNes - Lists the addresses in our wallet file")
+	fmt.Println(" listaddress - Lists the addresses in our wallet file")
 }
 
 func (cli *CommandLine) ValidateArgs() {
@@ -47,6 +48,9 @@ func (cli *CommandLine) PrintChain() {
 		fmt.Printf("Hash: %x\n", block.Hash)
 		pow := models.NewProof(block)
 		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
+		for _, tx := range block.Transactions {
+			fmt.Println(tx)
+		}
 		fmt.Println()
 
 		if len(block.PrevHash) == 0 {
@@ -56,6 +60,9 @@ func (cli *CommandLine) PrintChain() {
 }
 
 func (cli CommandLine) CreateBlockchain(address string) {
+	if !models.ValidateAddress(address) {
+		log.Panic("Address is invalid")
+	}
 	chain := models.InitBlockChain(address)
 	err := chain.Database.Close()
 	if err != nil {
@@ -65,6 +72,9 @@ func (cli CommandLine) CreateBlockchain(address string) {
 }
 
 func (cli CommandLine) GetBalance(address string) {
+	if !models.ValidateAddress(address) {
+		log.Panic("Address is invalid")
+	}
 	chain := models.ContinueBlockChain(address)
 	defer func(Database *badger.DB) {
 		err := Database.Close()
@@ -74,7 +84,9 @@ func (cli CommandLine) GetBalance(address string) {
 	}(chain.Database)
 
 	balance := 0
-	UTXOs := chain.FindUTXO(address)
+	pubKeyHash := utils.Base58Decode([]byte(address))
+	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
+	UTXOs := chain.FindUTXO(pubKeyHash)
 
 	for _, out := range UTXOs {
 		balance += out.Value
@@ -101,6 +113,13 @@ func (cli *CommandLine) CreateWallet() {
 }
 
 func (cli CommandLine) Send(from, to string, amount int) {
+	if !models.ValidateAddress(from) {
+		log.Panic("From Address is invalid")
+	}
+
+	if !models.ValidateAddress(from) {
+		log.Panic("To Address is invalid")
+	}
 	chain := models.ContinueBlockChain(from)
 	defer func(Database *badger.DB) {
 		err := Database.Close()
