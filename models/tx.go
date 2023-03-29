@@ -2,6 +2,7 @@ package models
 
 import (
 	"bytes"
+	"encoding/gob"
 	"github.com/bucks-go-wallet/utils"
 )
 
@@ -15,6 +16,10 @@ type TxInput struct {
 type TxOutput struct {
 	Value      int    //token
 	PubKeyHash []byte //needed to unlock token inside Value field
+}
+
+type TxOutputs struct {
+	Outputs []TxOutput
 }
 
 func NewTxOutput(value int, address string) *TxOutput {
@@ -37,4 +42,20 @@ func (out *TxOutput) Lock(address []byte) {
 
 func (out *TxOutput) IsLockedWithKey(pubKeyHash []byte) bool {
 	return bytes.Compare(out.PubKeyHash, pubKeyHash) == 0
+}
+
+func (outs *TxOutputs) Serialize() []byte {
+	var buffer bytes.Buffer
+	encode := gob.NewEncoder(&buffer)
+	err := encode.Encode(outs)
+	utils.Handle(err)
+	return buffer.Bytes()
+}
+
+func DeserializeOutputs(outputs []byte) TxOutputs {
+	var txOutputs TxOutputs
+	decode := gob.NewDecoder(bytes.NewReader(outputs))
+	err := decode.Decode(&txOutputs)
+	utils.Handle(err)
+	return txOutputs
 }
